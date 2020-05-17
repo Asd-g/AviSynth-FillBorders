@@ -21,9 +21,11 @@ FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode")
 
 - mode\
     0: "fillmargins"\
-        Fills the borders exactly like the Avisynth filter FillMargins, version 1.0.2.0. This mode is similar to "repeat", except that each pixel at the top and bottom borders is filled with a weighted average of its three neighbours from the previous line.
+        Fills the borders exactly like the Avisynth filter FillMargins, version 1.0.2.0. This mode is similar to "repeat", except that each pixel at the top and bottom borders is filled with a weighted average of its three neighbours from the previous line.\
     1: "repeat"\
-        Fills the borders using the outermost line or column.
+        Fills the borders using the outermost line or column.\
     2: "mirror"\
-        Fills the borders by mirroring.
+        Fills the borders by mirroring.\
     Default: 0
+
+### Note: a function FillMargins is added. It's alias for FillBordes(mode=0).

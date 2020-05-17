@@ -10,6 +10,11 @@ This is [a port of the VapourSynth plugin FillBorders](https://github.com/dubhat
 FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode")
 ```
 
+```
+FillMargins (clip, int "left", int "top", int "right", int "bottom", 0)
+```
+
+
 ## Parameters:
 
 - clip\
@@ -28,4 +33,4 @@ FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode")
         Fills the borders by mirroring.\
     Default: 0
 
-### Note: a function FillMargins is added. It's alias for FillBordes(mode=0).
+### Note: A function FillMargins is alias for FillBordes(mode=0).

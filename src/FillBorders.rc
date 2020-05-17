@@ -1,0 +1,31 @@
+#include <winver.h>
+#include <ntdef.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION             1
+PRODUCTVERSION        	0
+FILEFLAGSMASK           VS_FFI_FILEFLAGSMASK
+FILEFLAGS               0x0L
+FILEOS                  VOS__WINDOWS32
+FILETYPE                VFT_DLL
+FILESUBTYPE             VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+        VALUE "Comments",         "Fills the borders of a clip"
+        VALUE "CompanyName",      ""
+        VALUE "FileDescription",  "Fills the borders of a clip"
+        VALUE "FileVersion",      "v1.0"
+        VALUE "InternalName",     "FillBorders"
+        VALUE "OriginalFilename", ""
+        VALUE "ProductName",      "FillBorders"
+        VALUE "ProductVersion",   "v1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END

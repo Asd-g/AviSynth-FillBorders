@@ -7,30 +7,36 @@ This is [a port of the VapourSynth plugin FillBorders](https://github.com/dubhat
 # Usage
 
 ```
-FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode")
+FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode", int "y", int "u", int "v")
 ```
 
-```
-FillMargins (clip, int "left", int "top", int "right", int "bottom", 0)
-```
+The additional function FillMargins is alias for FillBordes(mode=0).
 
+```
+FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", int "u", int "v")
+```
 
 ## Parameters:
 
 - clip\
-    A clip to process. It must have constant format and dimensions and it must be 8..16 bit.
+    A clip to process. All planar formats are supported.
 
-- left, right, top, bottom\
+- left, top, right, bottom\
     Number of pixels to fill on each side. These can be any non-negative numbers, within reason. If they are all 0, the input clip is simply passed through.\
-    Default: 0.
+    Default: left = top = right = bottom = 0.
 
-- mode\
+- mode (FillBorders only)\
     0: "fillmargins"\
         Fills the borders exactly like the Avisynth filter FillMargins, version 1.0.2.0. This mode is similar to "repeat", except that each pixel at the top and bottom borders is filled with a weighted average of its three neighbours from the previous line.\
     1: "repeat"\
         Fills the borders using the outermost line or column.\
     2: "mirror"\
         Fills the borders by mirroring.\
-    Default: 0
+    Default: 0.
 
-### Note: A function FillMargins is alias for FillBordes(mode=0).
+- y, u, v\
+    Planes to process.\
+    1: Return garbage.\
+    2: Copy plane.\
+    3: Process plane. Always process planes when the clip is RGB.\
+    Default: y = u = v = 3.

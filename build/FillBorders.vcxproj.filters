@@ -15,12 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\FillBorders.cpp">
+    <ClCompile Include="..\src\FillBorders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="src\FillBorders.rc">
+    <ResourceCompile Include="..\src\FillBorders.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

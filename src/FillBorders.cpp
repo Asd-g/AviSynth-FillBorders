@@ -178,7 +178,7 @@ static void fillBorders(uint8_t* dstp_, int width, int height, int stride, int l
                         T prev = dstp[stride * (y + 1) + x - 1];
                         T cur = dstp[stride * (y + 1) + x];
                         T next = dstp[stride * (y + 1) + x + 1];
-                        dstp[stride * y + x] = (3 * prev + 2 * cur + 3 * next + 4 / 65536.f) / 8;
+                        dstp[stride * y + x] = (3 * prev + 2 * cur + 3 * next + 4 / 2147483647.f) / 8;
                     }
                 }
 
@@ -195,7 +195,7 @@ static void fillBorders(uint8_t* dstp_, int width, int height, int stride, int l
                         T prev = dstp[stride * (y - 1) + x - 1];
                         T cur = dstp[stride * (y - 1) + x];
                         T next = dstp[stride * (y - 1) + x + 1];
-                        dstp[stride * y + x] = (3 * prev + 2 * cur + 3 * next + 4 / 65536.f) / 8;
+                        dstp[stride * y + x] = (3 * prev + 2 * cur + 3 * next + 4 / 2147483647.f) / 8;
                     }
                 }
             }

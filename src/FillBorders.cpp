@@ -264,14 +264,16 @@ public:
     FillBorders(PClip _child, int left, int top, int right, int bottom, int mode, int y, int u, int v, IScriptEnvironment* env)
         : GenericVideoFilter(_child), m_left(left), m_top(top), m_right(right), m_bottom(bottom), m_mode(mode), m_y(y), m_u(u), m_v(v)
     {
+        if (!vi.IsPlanar())
+            env->ThrowError("FillBorders: only planar formats are supported.");
         if (left < 0)
-            env->ThrowError("FillBorders: left must be equal to or greater than 0");
+            env->ThrowError("FillBorders: left must be equal to or greater than 0.");
         if (top < 0)
-            env->ThrowError("FillBorders: top must be equal to or greater than 0");
+            env->ThrowError("FillBorders: top must be equal to or greater than 0.");
         if (right < 0)
-            env->ThrowError("FillBorders: right must be equal to or greater than 0");
+            env->ThrowError("FillBorders: right must be equal to or greater than 0.");
         if (bottom < 0)
-            env->ThrowError("FillBorders: bottom must be equal to or greater than 0");
+            env->ThrowError("FillBorders: bottom must be equal to or greater than 0.");
         if (mode < 0 || mode > 2)
             env->ThrowError("FillBorders: invalid mode. Valid values are '0 for fillmargins', '1 for repeat', and '2 for mirror'.");
         if (mode == 0 || mode == 1)
@@ -285,11 +287,11 @@ public:
                 env->ThrowError("FillBorders: the input clip is too small or the borders are too big.");
         }
         if (y < 1 || y > 3)
-            env->ThrowError("FillBorders: y must be between 1..3");
+            env->ThrowError("FillBorders: y must be between 1..3.");
         if (u < 1 || u > 3)
-            env->ThrowError("FillBorders: u must be between 1..3");
+            env->ThrowError("FillBorders: u must be between 1..3.");
         if (v < 1 || v > 3)
-            env->ThrowError("FillBorders: v must be between 1..3");
+            env->ThrowError("FillBorders: v must be between 1..3.");
 
         *process = 0;
 

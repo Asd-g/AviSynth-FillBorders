@@ -1,3 +1,6 @@
+##### 1.1.1:
+    Throw error for non-planar formats.
+
 ##### 1.1.0:
     Added support for float.
     Added y, u, v, parameters.

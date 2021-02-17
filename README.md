@@ -31,7 +31,13 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
     1: "repeat"\
         Fills the borders using the outermost line or column.\
     2: "mirror"\
-        Fills the borders by mirroring.\
+        Fills the borders by mirroring (half sample symmetric).\
+    3: "reflect"\
+        Fills the borders by reflecting (whole sample symmetric).\
+    4: "wrap"\
+        Fills the borders by wrapping.\
+    5: "fade"\
+        Fill the borders to constant value.\
     Default: 0.
 
 - y, u, v\

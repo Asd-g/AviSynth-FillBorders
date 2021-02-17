@@ -18,7 +18,7 @@ static auto lerp(const T1 fill, const T1 src, const int pos, const int size, con
     else if constexpr (std::is_same_v<T, uint16_t>)
     {
         const int64_t max_range = 1LL << bits;
-        return static_cast<int>(clamp(((fill * max_range * pos / size) + (src * max_range * (static_cast<int64_t>(size) - pos) / size)) >> bits, 0LL, max_range - 1));
+        return static_cast<int>(clamp(((fill * max_range * pos / size) + (src * max_range * (static_cast<int64_t>(size) - pos) / size)) >> bits, static_cast<int64_t>(0), max_range - 1));
     }
     else
         return clamp(((fill * pos / size) + (src * (size - pos) / size)), plane ? -0.5f : 0.0f, plane ? 0.5f : 1.0f);
@@ -54,7 +54,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
     const int planes_r[4] = { PLANAR_G, PLANAR_B, PLANAR_R, PLANAR_A };
     const int* planes = vi.IsRGB() ? planes_r : planes_y;
     const int planecount = min(vi.NumComponents(), 3);
-    for (int i = 0; i < planecount; i++)
+    for (int i = 0; i < planecount; ++i)
     {
         const int plane = planes[i];
         const int height = frame->GetHeight(plane);
@@ -75,7 +75,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                 case 0:
                     if constexpr ((std::is_same_v<T, uint8_t>))
                     {
-                        for (int y = top; y < height - bottom; y++)
+                        for (int y = top; y < height - bottom; ++y)
                         {
                             memset(dstp + stride * static_cast<int64_t>(y), (dstp + stride * static_cast<int64_t>(y))[left], left);
                             memset(dstp + stride * static_cast<int64_t>(y) + width - right, (dstp + stride * static_cast<int64_t>(y) + width - right)[-1], right);
@@ -83,7 +83,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                     }
                     else
                     {
-                        for (int y = top; y < height - bottom; y++)
+                        for (int y = top; y < height - bottom; ++y)
                         {
                             memset16<T>(dstp + stride * static_cast<int64_t>(y), (dstp + stride * static_cast<int64_t>(y))[left], left);
                             memset16<T>(dstp + stride * static_cast<int64_t>(y) + width - right, (dstp + stride * static_cast<int64_t>(y) + width - right)[-1], right);
@@ -98,7 +98,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                         memcpy(dstp + stride * static_cast<int64_t>(y) + width - 8, dstp + stride * (static_cast<int64_t>(y) + 1) + width - 8, 8LL * size);
 
                         // weighted average for the rest
-                        for (int x = 1; x < width - 8; x++)
+                        for (int x = 1; x < width - 8; ++x)
                         {
                             T prev = dstp[stride * (y + 1) + x - 1];
                             T cur = dstp[stride * (y + 1) + x];
@@ -111,7 +111,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                         }
                     }
 
-                    for (int y = height - bottom; y < height; y++)
+                    for (int y = height - bottom; y < height; ++y)
                     {
                         // copy first pixel
                         // copy last eight pixels
@@ -119,7 +119,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                         memcpy(dstp + stride * static_cast<int64_t>(y) + width - 8, dstp + stride * (static_cast<int64_t>(y) - 1) + width - 8, 8LL * size);
 
                         // weighted average for the rest
-                        for (int x = 1; x < width - 8; x++)
+                        for (int x = 1; x < width - 8; ++x)
                         {
                             T prev = dstp[stride * (y - 1) + x - 1];
                             T cur = dstp[stride * (y - 1) + x];
@@ -135,7 +135,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                 case 1:
                     if constexpr ((std::is_same_v<T, uint8_t>))
                     {
-                        for (int y = top; y < height - bottom; y++)
+                        for (int y = top; y < height - bottom; ++y)
                         {
                             memset(dstp + stride * static_cast<int64_t>(y), (dstp + stride * static_cast<int64_t>(y))[left], left);
                             memset(dstp + stride * static_cast<int64_t>(y) + width - right, (dstp + stride * static_cast<int64_t>(y) + width - right)[-1], right);
@@ -143,91 +143,91 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                     }
                     else
                     {
-                        for (int y = top; y < height - bottom; y++)
+                        for (int y = top; y < height - bottom; ++y)
                         {
                             memset16<T>(dstp + stride * static_cast<int64_t>(y), (dstp + stride * static_cast<int64_t>(y))[left], left);
                             memset16<T>(dstp + stride * static_cast<int64_t>(y) + width - right, (dstp + stride * static_cast<int64_t>(y) + width - right)[-1], right);
                         }
                     }
 
-                    for (int y = 0; y < top; y++)
+                    for (int y = 0; y < top; ++y)
                         memcpy(dstp + static_cast<int64_t>(stride) * y, dstp + static_cast<int64_t>(stride) * top, static_cast<int64_t>(stride) * size);
 
-                    for (int y = height - bottom; y < height; y++)
+                    for (int y = height - bottom; y < height; ++y)
                         memcpy(dstp + static_cast<int64_t>(stride) * y, dstp + stride * (static_cast<int64_t>(height) - bottom - 1), static_cast<int64_t>(stride) * size);
                     break;
                 case 2:
-                    for (int y = top; y < height - bottom; y++)
+                    for (int y = top; y < height - bottom; ++y)
                     {
-                        for (int x = 0; x < left; x++)
+                        for (int x = 0; x < left; ++x)
                             dstp[stride * y + x] = dstp[stride * y + left * 2 - 1 - x];
 
-                        for (int x = 0; x < right; x++)
+                        for (int x = 0; x < right; ++x)
                             dstp[stride * y + width - right + x] = dstp[stride * y + width - right - 1 - x];
                     }
 
-                    for (int y = 0; y < top; y++)
+                    for (int y = 0; y < top; ++y)
                         memcpy(dstp + static_cast<int64_t>(stride) * y, dstp + stride * (top * 2LL - 1 - y), static_cast<int64_t>(stride) * size);
 
-                    for (int y = 0; y < bottom; y++)
+                    for (int y = 0; y < bottom; ++y)
                         memcpy(dstp + stride * (static_cast<int64_t>(height) - bottom + static_cast<int64_t>(y)), dstp + stride * (static_cast<int64_t>(height) - bottom - 1 - y), static_cast<int64_t>(stride) * size);
                     break;
                 case 3:
-                    for (int y = top; y < height - bottom; y++)
+                    for (int y = top; y < height - bottom; ++y)
                     {
-                        for (int x = 0; x < left; x++)
+                        for (int x = 0; x < left; ++x)
                             dstp[stride * y + x] = dstp[stride * y + left * 2 - x];
 
-                        for (int x = 0; x < right; x++)
+                        for (int x = 0; x < right; ++x)
                             dstp[stride * y + width - right + x] = dstp[stride * y + width - right - 2 - x];
                     }
 
-                    for (int y = 0; y < top; y++)
+                    for (int y = 0; y < top; ++y)
                         memcpy(dstp + static_cast<int64_t>(stride) * y, dstp + stride * (top * 2LL - y), static_cast<int64_t>(stride) * size);
 
-                    for (int y = 0; y < bottom; y++)
+                    for (int y = 0; y < bottom; ++y)
                         memcpy(dstp + stride * (static_cast<int64_t>(height) - bottom + static_cast<int64_t>(y)), dstp + stride * (static_cast<int64_t>(height) - bottom - 2 - y), static_cast<int64_t>(stride) * size);
                     break;
                 case 4:
-                    for (int y = top; y < height - bottom; y++)
+                    for (int y = top; y < height - bottom; ++y)
                     {
-                        for (int x = 0; x < left; x++)
+                        for (int x = 0; x < left; ++x)
                             dstp[stride * y + x] = dstp[stride * y + width - right - left + x];
 
-                        for (int x = 0; x < right; x++)
+                        for (int x = 0; x < right; ++x)
                             dstp[stride * y + width - right + x] = dstp[stride * y + left + x];
                     }
 
-                    for (int y = 0; y < top; y++)
+                    for (int y = 0; y < top; ++y)
                         memcpy(dstp + static_cast<int64_t>(stride) * y, dstp + static_cast<int64_t>(stride) * (static_cast<int64_t>(height) - bottom - top + y), static_cast<int64_t>(stride) * size);
 
-                    for (int y = 0; y < bottom; y++)
+                    for (int y = 0; y < bottom; ++y)
                         memcpy(dstp + stride * (static_cast<int64_t>(height) - bottom + static_cast<int64_t>(y)), dstp + static_cast<int64_t>(stride) * (top + static_cast<int64_t>(y)), static_cast<int64_t>(stride) * size);
                     break;
                 case 5:
                     const int bits = vi.BitsPerComponent();
                     const int pl = (vi.IsRGB()) ? 0 : i;
 
-                    for (int y = 0; y < top; y++)
+                    for (int y = 0; y < top; ++y)
                     {
-                        for (int x = 0; x < width; x++)
+                        for (int x = 0; x < width; ++x)
                             dstp[stride * y + x] = lerp<T, T1>(dstp[x], dstp[stride * y + x], top - y, top, bits, pl);
                     }
 
                     const int start_bottom = height - bottom;
-                    for (int y = start_bottom; y < height; y++)
+                    for (int y = start_bottom; y < height; ++y)
                     {
-                        for (int x = 0; x < width; x++)
+                        for (int x = 0; x < width; ++x)
                             dstp[stride * y + x] = lerp<T, T1>(dstp[x], dstp[stride * y + x], y - start_bottom, bottom, bits, pl);
                     }
 
                     const int start_right = width - right;
-                    for (int y = 0; y < height; y++)
+                    for (int y = 0; y < height; ++y)
                     {
-                        for (int x = 0; x < left; x++)
+                        for (int x = 0; x < left; ++x)
                             dstp[stride * y + x] = lerp<T, T1>(dstp[x], dstp[stride * y + x], left - x, left, bits, pl);
 
-                        for (int x = 0; x < right; x++)
+                        for (int x = 0; x < right; ++x)
                             dstp[stride * y + start_right + x] = lerp<T, T1>(dstp[x], dstp[stride * y + start_right + x], x, right, bits, pl);
                     }
                     break;
@@ -278,7 +278,7 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
 
     const int planes[3] = { y, u, v };
     const int planecount = min(vi.NumComponents(), 3);
-    for (int i = 0; i < planecount; i++)
+    for (int i = 0; i < planecount; ++i)
     {
         if (vi.IsRGB())
             process[i] = 3;

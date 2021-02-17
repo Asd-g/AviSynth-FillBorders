@@ -46,3 +46,28 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
     2: Copy plane.\
     3: Process plane. Always process planes when the clip is RGB.\
     Default: y = u = v = 3.
+
+# Building
+
+## Windows
+
+Use solution files.
+
+## Linux
+
+### Requirements
+
+- Git
+- C++17 compiler
+- CMake >= 3.16
+
+```
+git clone https://github.com/Asd-g/AviSynth-FillBorders && \
+cd AviSynth-FillBorders && \
+mkdir build && \
+cd build && \
+
+cmake ..
+make -j$(nproc)
+sudo make install
+```

@@ -276,6 +276,18 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
     if (v < 1 || v > 3)
         env->ThrowError("FillBorders: v must be between 1..3.");
 
+    bool has_at_least_v8 = true;
+    try { env->CheckVersion(8); }
+    catch (const AvisynthError&) { has_at_least_v8 = false; }
+    
+    if (has_at_least_v8)
+    {
+        PVideoFrame src = child->GetFrame(0, env);
+        const AVSMap* props = env->getFramePropsRO(src);
+        if (env->propNumElements(props, "_FieldBased") > 0 && env->propGetInt(props, "_FieldBased", 0, nullptr) > 0)
+            env->ThrowError("FillBorders: clip must be frame-based");
+    }
+
     const int planes[3] = { y, u, v };
     const int planecount = min(vi.NumComponents(), 3);
     for (int i = 0; i < planecount; ++i)

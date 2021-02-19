@@ -1,3 +1,6 @@
+##### 1.2.1:
+    Not allowed clips with _FieldBased > 0. 
+
 ##### 1.2.0:
     Added additional modes (from ffmpeg): 3 (reflect); 4 (wrap); 5 (fade). 
 

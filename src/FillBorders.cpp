@@ -32,9 +32,12 @@ class FillBorders : public GenericVideoFilter
     int m_bottom;
     int m_mode;
     int process[3];
+    bool has_at_least_v8;
 
     template<typename T, typename T1>
     PVideoFrame fill(PVideoFrame frame, IScriptEnvironment* env);
+
+    PVideoFrame (FillBorders::* processing)(PVideoFrame frame, IScriptEnvironment* env);
 
 public:
     FillBorders(PClip _child, int left, int top, int right, int bottom, int mode, int y, int u, int v, IScriptEnvironment* env);
@@ -258,7 +261,7 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
     if (bottom < 0)
         env->ThrowError("FillBorders: bottom must be equal to or greater than 0.");
     if (mode < 0 || mode > 5)
-        env->ThrowError("FillBorders: invalid mode. Valid values are '0 for fillmargins', '1 for repeat', and '2 for mirror'.");
+        env->ThrowError("FillBorders: invalid mode.");
     if (mode == 0 || mode == 1 || mode == 5)
     {
         if (vi.width < left + right || vi.width <= left || vi.width <= right || vi.width < top + bottom || vi.height <= top || vi.height <= bottom)
@@ -276,17 +279,9 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
     if (v < 1 || v > 3)
         env->ThrowError("FillBorders: v must be between 1..3.");
 
-    bool has_at_least_v8 = true;
+    has_at_least_v8 = true;
     try { env->CheckVersion(8); }
     catch (const AvisynthError&) { has_at_least_v8 = false; }
-    
-    if (has_at_least_v8)
-    {
-        PVideoFrame src = child->GetFrame(0, env);
-        const AVSMap* props = env->getFramePropsRO(src);
-        if (env->propNumElements(props, "_FieldBased") > 0 && env->propGetInt(props, "_FieldBased", 0, nullptr) > 0)
-            env->ThrowError("FillBorders: clip must be frame-based");
-    }
 
     const int planes[3] = { y, u, v };
     const int planecount = min(vi.NumComponents(), 3);
@@ -304,18 +299,27 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
             }
         }
     }
+
+    switch (vi.ComponentSize())
+    {
+        case 1: processing = &FillBorders::fill<uint8_t, int>; break;
+        case 2: processing = &FillBorders::fill<uint16_t, int>; break;
+        case 4: processing = &FillBorders::fill<float, float>; break;
+    }
 }
 
 PVideoFrame __stdcall FillBorders::GetFrame(int n, IScriptEnvironment* env)
 {
     PVideoFrame frame = child->GetFrame(n, env);
 
-    switch (vi.ComponentSize())
+    if (has_at_least_v8)
     {
-        case 1: return fill<uint8_t, int>(frame, env);
-        case 2: return fill<uint16_t, int>(frame, env);
-        default: return fill<float, float>(frame, env);
+        const AVSMap* props = env->getFramePropsRO(frame);
+        if (env->propNumElements(props, "_FieldBased") > 0 && env->propGetInt(props, "_FieldBased", 0, nullptr) > 0)
+            env->ThrowError("FillBorders: frame must be not interlaced.");
     }
+
+    return (this->*processing)(frame, env);
 }
 
 AVSValue __cdecl Create_FillBorders(AVSValue args, void* user_data, IScriptEnvironment* env)

@@ -1,27 +1,28 @@
 #include <memory>
+#include <cmath>
+#include <algorithm>
 
 #include "avisynth.h"
-#include "avs/minmax.h"
 
 template <typename T>
-static inline void memset16(T* ptr, T value, size_t num)
+AVS_FORCEINLINE void memset16(T* ptr, T value, size_t num)
 {
     while (num-- > 0)
         *ptr++ = value;
 }
 
 template<typename T, typename T1>
-static auto lerp(const T1 fill, const T1 src, const int pos, const int size, const int bits, const int plane)
+AVS_FORCEINLINE auto lerp(const T1 fill, const T1 src, const int pos, const int size, const int bits, const int plane)
 {
     if constexpr (std::is_same_v<T, uint8_t>)
-        return clamp(((fill * 256 * pos / size) + (src * 256 * (size - pos) / size)) >> 8, 0, 255);
+        return std::clamp(((fill * 256 * pos / size) + (src * 256 * (size - pos) / size)) >> 8, 0, 255);
     else if constexpr (std::is_same_v<T, uint16_t>)
     {
         const int64_t max_range = 1LL << bits;
-        return static_cast<int>(clamp(((fill * max_range * pos / size) + (src * max_range * (static_cast<int64_t>(size) - pos) / size)) >> bits, static_cast<int64_t>(0), max_range - 1));
+        return static_cast<int>(std::clamp(((fill * max_range * pos / size) + (src * max_range * (static_cast<int64_t>(size) - pos) / size)) >> bits, static_cast<int64_t>(0), max_range - 1));
     }
     else
-        return clamp(((fill * pos / size) + (src * (size - pos) / size)), plane ? -0.5f : 0.0f, plane ? 0.5f : 1.0f);
+        return std::clamp(((fill * pos / size) + (src * (size - pos) / size)), plane ? -0.5f : 0.0f, plane ? 0.5f : 1.0f);
 }
 
 class FillBorders : public GenericVideoFilter
@@ -37,7 +38,7 @@ class FillBorders : public GenericVideoFilter
     template<typename T, typename T1>
     PVideoFrame fill(PVideoFrame frame, IScriptEnvironment* env);
 
-    PVideoFrame (FillBorders::* processing)(PVideoFrame frame, IScriptEnvironment* env);
+    PVideoFrame(FillBorders::* processing)(PVideoFrame frame, IScriptEnvironment* env);
 
 public:
     FillBorders(PClip _child, int left, int top, int right, int bottom, int mode, int y, int u, int v, IScriptEnvironment* env);
@@ -52,11 +53,11 @@ template<typename T, typename T1>
 PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
 {
     env->MakeWritable(&frame);
-    const int size = vi.ComponentSize();
+    const int size = sizeof(T);
     const int planes_y[4] = { PLANAR_Y, PLANAR_U, PLANAR_V, PLANAR_A };
     const int planes_r[4] = { PLANAR_G, PLANAR_B, PLANAR_R, PLANAR_A };
     const int* planes = vi.IsRGB() ? planes_r : planes_y;
-    const int planecount = min(vi.NumComponents(), 3);
+    const int planecount = std::min(vi.NumComponents(), 3);
     for (int i = 0; i < planecount; ++i)
     {
         const int plane = planes[i];
@@ -208,6 +209,7 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                         memcpy(dstp + stride * (static_cast<int64_t>(height) - bottom + static_cast<int64_t>(y)), dstp + static_cast<int64_t>(stride) * (top + static_cast<int64_t>(y)), static_cast<int64_t>(stride) * size);
                     break;
                 case 5:
+                {
                     const int bits = vi.BitsPerComponent();
                     const int pl = (vi.IsRGB()) ? 0 : i;
 
@@ -234,6 +236,232 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
                             dstp[stride * y + start_right + x] = lerp<T, T1>(dstp[x], dstp[stride * y + start_right + x], x, right, bits, pl);
                     }
                     break;
+                }
+                case 6:
+                    for (int x = left - 1; x >= 0; x--)
+                    {
+                        // copy pixels until top + 3/bottom + 3
+                        // this way we avoid darkened corners when all sides need filling
+                        for (int y = 0; y < top + 3; y++)
+                            dstp[stride * y + x] = dstp[stride * y + x + 1];
+                        for (int y = bottom + 3; y > 0; y--)
+                            dstp[stride * (height - y) + x] = dstp[stride * (height - y) + x + 1];
+
+                        // weighted average for the rest
+                        for (int y = top + 3; y < height - (bottom + 3); y++)
+                        {
+                            T prev = dstp[stride * (y - 1) + x + 1];
+                            T cur = dstp[stride * (y)+x + 1];
+                            T next = dstp[stride * (y + 1) + x + 1];
+
+                            T ref_prev = dstp[stride * (y - 1) + x + 2];
+                            T ref_cur = dstp[stride * (y)+x + 2];
+                            T ref_next = dstp[stride * (y + 1) + x + 2];
+
+                            T fill_prev, fill_cur, fill_next;
+
+                            if constexpr (std::is_integral_v<T>)
+                            {
+                                fill_prev = llrint((5LL * prev + 3LL * cur + 1 * next) / 9.0);
+                                fill_cur = llrint((1 * prev + 3LL * cur + 1 * next) / 5.0);
+                                fill_next = llrint((1 * prev + 3LL * cur + 5LL * next) / 9.0);
+                            }
+                            else
+                            {
+                                fill_prev = (5 * prev + 3 * cur + 1 * next) / 9.0f;
+                                fill_cur = (1 * prev + 3 * cur + 1 * next) / 5.0f;
+                                fill_next = (1 * prev + 3 * cur + 5 * next) / 9.0f;
+                            }
+
+                            T blur_prev = (2 * ref_prev + ref_cur + dstp[stride * (y - 2) + x + 2]) / 4;
+                            T blur_next = (2 * ref_next + ref_cur + dstp[stride * (y + 2) + x + 2]) / 4;
+
+                            T diff_next = abs(ref_next - fill_cur);
+                            T diff_prev = abs(ref_prev - fill_cur);
+                            T thr_next = abs(ref_next - blur_next);
+                            T thr_prev = abs(ref_prev - blur_prev);
+
+                            if (diff_next > thr_next)
+                            {
+                                if (diff_prev < diff_next)
+                                    dstp[stride * y + x] = fill_prev;
+                                else
+                                    dstp[stride * y + x] = fill_next;
+                            }
+                            else if (diff_prev > thr_prev)
+                                dstp[stride * y + x] = fill_next;
+                            else
+                                dstp[stride * y + x] = fill_cur;
+                        }
+                    }
+
+                    for (int x = width - right; x < width; x++)
+                    {
+                        // copy pixels until top + 3/bottom + 3
+                        // this way we avoid darkened corners when all sides need filling
+                        for (int y = 0; y < top + 3; y++)
+                            dstp[stride * y + x] = dstp[stride * y + x - 1];
+                        for (int y = bottom + 3; y > 0; y--)
+                            dstp[stride * (height - y) + x] = dstp[stride * (height - y) + x - 1];
+
+                        // weighted average for the rest
+                        for (int y = top + 3; y < height - (bottom + 3); y++)
+                        {
+                            T prev = dstp[stride * (y - 1) + x - 1];
+                            T cur = dstp[stride * (y)+x - 1];
+                            T next = dstp[stride * (y + 1) + x - 1];
+
+                            T ref_prev = dstp[stride * (y - 1) + x - 2];
+                            T ref_cur = dstp[stride * (y)+x - 2];
+                            T ref_next = dstp[stride * (y + 1) + x - 2];
+
+                            T fill_prev, fill_cur, fill_next;
+
+                            if constexpr (std::is_integral_v<T>)
+                            {
+                                fill_prev = llrint((5LL * prev + 3LL * cur + 1 * next) / 9.0);
+                                fill_cur = llrint((1 * prev + 3LL * cur + 1 * next) / 5.0);
+                                fill_next = llrint((1 * prev + 3LL * cur + 5LL * next) / 9.0);
+                            }
+                            else
+                            {
+                                fill_prev = (5 * prev + 3 * cur + 1 * next) / 9.0f;
+                                fill_cur = (1 * prev + 3 * cur + 1 * next) / 5.0f;
+                                fill_next = (1 * prev + 3 * cur + 5 * next) / 9.0f;
+                            }
+
+                            T blur_prev = (2 * ref_prev + ref_cur + dstp[stride * (y - 2) + x - 2]) / 4;
+                            T blur_next = (2 * ref_next + ref_cur + dstp[stride * (y + 2) + x - 2]) / 4;
+
+                            T diff_next = abs(ref_next - fill_cur);
+                            T diff_prev = abs(ref_prev - fill_cur);
+                            T thr_next = abs(ref_next - blur_next);
+                            T thr_prev = abs(ref_prev - blur_prev);
+
+                            if (diff_next > thr_next)
+                            {
+                                if (diff_prev < diff_next)
+                                    dstp[stride * y + x] = fill_prev;
+                                else
+                                    dstp[stride * y + x] = fill_next;
+                            }
+                            else if (diff_prev > thr_prev)
+                                dstp[stride * y + x] = fill_next;
+                            else
+                                dstp[stride * y + x] = fill_cur;
+                        }
+                    }
+
+                    for (int y = top - 1; y >= 0; y--)
+                    {
+                        // copy first pixel
+                        // copy last eight pixels
+                        dstp[stride * y] = dstp[stride * (y + 1)];
+                        memcpy(dstp + stride * static_cast<int64_t>(y) + width - 8, dstp + stride * (y + 1LL) + width - 8, 8 * size);
+
+                        // weighted average for the rest
+                        for (int x = 1; x < width - 8; x++)
+                        {
+                            T prev = dstp[stride * (y + 1) + x - 1];
+                            T cur = dstp[stride * (y + 1) + x];
+                            T next = dstp[stride * (y + 1) + x + 1];
+
+                            T ref_prev = dstp[stride * (y + 2) + x - 1];
+                            T ref_cur = dstp[stride * (y + 2) + x];
+                            T ref_next = dstp[stride * (y + 2) + x + 1];
+
+                            T fill_prev, fill_cur, fill_next;
+
+                            if constexpr (std::is_integral_v<T>)
+                            {
+                                fill_prev = llrint((5LL * prev + 3LL * cur + 1 * next) / 9.0);
+                                fill_cur = llrint((1 * prev + 3LL * cur + 1 * next) / 5.0);
+                                fill_next = llrint((1 * prev + 3LL * cur + 5LL * next) / 9.0);
+                            }
+                            else
+                            {
+                                fill_prev = (5 * prev + 3 * cur + 1 * next) / 9.0f;
+                                fill_cur = (1 * prev + 3 * cur + 1 * next) / 5.0f;
+                                fill_next = (1 * prev + 3 * cur + 5 * next) / 9.0f;
+                            }
+
+                            T blur_prev = (2 * ref_prev + ref_cur + dstp[stride * (y + 2) + x - 2]) / 4;
+                            T blur_next = (2 * ref_next + ref_cur + dstp[stride * (y + 2) + x + 2]) / 4;
+
+                            T diff_next = abs(ref_next - fill_cur);
+                            T diff_prev = abs(ref_prev - fill_cur);
+                            T thr_next = abs(ref_next - blur_next);
+                            T thr_prev = abs(ref_prev - blur_prev);
+
+                            if (diff_next > thr_next)
+                            {
+                                if (diff_prev < diff_next)
+                                    dstp[stride * y + x] = fill_prev;
+                                else
+                                    dstp[stride * y + x] = fill_next;
+                            }
+                            else if (diff_prev > thr_prev)
+                                dstp[stride * y + x] = fill_next;
+                            else
+                                dstp[stride * y + x] = fill_cur;
+                        }
+                    }
+
+                    for (int y = height - bottom; y < height; y++)
+                    {
+                        // copy first pixel
+                        // copy last eight pixels
+                        dstp[stride * y] = dstp[stride * (y - 1)];
+                        memcpy(dstp + stride * static_cast<int64_t>(y) + width - 8, dstp + stride * (y - 1LL) + width - 8, 8 * size);
+
+                        // weighted average for the rest
+                        for (int x = 1; x < width - 8; x++)
+                        {
+                            T prev = dstp[stride * (y - 1) + x - 1];
+                            T cur = dstp[stride * (y - 1) + x];
+                            T next = dstp[stride * (y - 1) + x + 1];
+
+                            T ref_prev = dstp[stride * (y - 2) + x - 1];
+                            T ref_cur = dstp[stride * (y - 2) + x];
+                            T ref_next = dstp[stride * (y - 2) + x + 1];
+
+                            T fill_prev, fill_cur, fill_next;
+
+                            if constexpr (std::is_integral_v<T>)
+                            {
+                                fill_prev = llrint((5LL * prev + 3LL * cur + 1 * next) / 9.0);
+                                fill_cur = llrint((1 * prev + 3LL * cur + 1 * next) / 5.0);
+                                fill_next = llrint((1 * prev + 3LL * cur + 5LL * next) / 9.0);
+                            }
+                            else
+                            {
+                                fill_prev = (5 * prev + 3 * cur + 1 * next) / 9.0f;
+                                fill_cur = (1 * prev + 3 * cur + 1 * next) / 5.0f;
+                                fill_next = (1 * prev + 3 * cur + 5 * next) / 9.0f;
+                            }
+
+                            T blur_prev = (2 * ref_prev + ref_cur + dstp[stride * (y - 2) + x - 2]) / 4;
+                            T blur_next = (2 * ref_next + ref_cur + dstp[stride * (y - 2) + x + 2]) / 4;
+
+                            T diff_next = abs(ref_next - fill_cur);
+                            T diff_prev = abs(ref_prev - fill_cur);
+                            T thr_next = abs(ref_next - blur_next);
+                            T thr_prev = abs(ref_prev - blur_prev);
+
+                            if (diff_next > thr_next)
+                            {
+                                if (diff_prev < diff_next)
+                                    dstp[stride * y + x] = fill_prev;
+                                else
+                                    dstp[stride * y + x] = fill_next;
+                            }
+                            else if (diff_prev > thr_prev)
+                                dstp[stride * y + x] = fill_next;
+                            else
+                                dstp[stride * y + x] = fill_cur;
+                        }
+                    }
+                    break;
             }
         }
         else if (process[i] == 2)
@@ -252,24 +480,24 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
 {
     if (!vi.IsPlanar())
         env->ThrowError("FillBorders: only planar formats are supported.");
-    if (left < 0)
+    if (m_left < 0)
         env->ThrowError("FillBorders: left must be equal to or greater than 0.");
-    if (top < 0)
+    if (m_top < 0)
         env->ThrowError("FillBorders: top must be equal to or greater than 0.");
-    if (right < 0)
+    if (m_right < 0)
         env->ThrowError("FillBorders: right must be equal to or greater than 0.");
-    if (bottom < 0)
+    if (m_bottom < 0)
         env->ThrowError("FillBorders: bottom must be equal to or greater than 0.");
-    if (mode < 0 || mode > 5)
+    if (m_mode < 0 || m_mode > 6)
         env->ThrowError("FillBorders: invalid mode.");
-    if (mode == 0 || mode == 1 || mode == 5)
+    if (m_mode == 0 || m_mode == 1 || m_mode == 5 || m_mode == 6)
     {
-        if (vi.width < left + right || vi.width <= left || vi.width <= right || vi.width < top + bottom || vi.height <= top || vi.height <= bottom)
+        if (vi.width < m_left + m_right || vi.width <= m_left || vi.width <= m_right || vi.width < m_top + m_bottom || vi.height <= m_top || vi.height <= m_bottom)
             env->ThrowError("FillBorders: the input clip is too small or the borders are too big.");
     }
-    else if (mode == 2 || mode == 3 || mode == 4)
+    else if (m_mode == 2 || m_mode == 3 || m_mode == 4)
     {
-        if (vi.width < 2 * left || vi.width < 2 * right || vi.height < 2 * top || vi.height < 2 * bottom)
+        if (vi.width < 2 * m_left || vi.width < 2 * m_right || vi.height < 2 * m_top || vi.height < 2 * m_bottom)
             env->ThrowError("FillBorders: the input clip is too small or the borders are too big.");
     }
     if (y < 1 || y > 3)
@@ -281,10 +509,13 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
 
     has_at_least_v8 = true;
     try { env->CheckVersion(8); }
-    catch (const AvisynthError&) { has_at_least_v8 = false; }
+    catch (const AvisynthError&)
+    {
+        has_at_least_v8 = false;
+    }
 
     const int planes[3] = { y, u, v };
-    const int planecount = min(vi.NumComponents(), 3);
+    const int planecount = std::min(vi.NumComponents(), 3);
     for (int i = 0; i < planecount; ++i)
     {
         if (vi.IsRGB())
@@ -304,7 +535,7 @@ FillBorders::FillBorders(PClip _child, int left, int top, int right, int bottom,
     {
         case 1: processing = &FillBorders::fill<uint8_t, int>; break;
         case 2: processing = &FillBorders::fill<uint16_t, int>; break;
-        case 4: processing = &FillBorders::fill<float, float>; break;
+        default: processing = &FillBorders::fill<float, float>; break;
     }
 }
 
@@ -358,7 +589,7 @@ public:
     const char* const* arg_names() const { return _arg_names; }
 };
 
-static void margins(const AVSValue& args, Arguments* out_args, int mode = 1)
+void margins(const AVSValue& args, Arguments* out_args, int mode = 1)
 {
     out_args->add(args[0]);
 

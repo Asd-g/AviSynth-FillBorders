@@ -1,8 +1,11 @@
+##### 1.3.0:
+    Added mode 6 (fixborders) (from vs FillBorders). 
+
 ##### 1.2.1:
-    Not allowed clips with _FieldBased > 0. 
+    Not allowed clips with _FieldBased > 0.
 
 ##### 1.2.0:
-    Added additional modes (from ffmpeg): 3 (reflect); 4 (wrap); 5 (fade). 
+    Added additional modes (from ffmpeg): 3 (reflect); 4 (wrap); 5 (fade).
 
 ##### 1.1.1:
     Throw error for non-planar formats.

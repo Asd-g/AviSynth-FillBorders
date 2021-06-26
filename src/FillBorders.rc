@@ -2,8 +2,8 @@
 #include <ntdef.h>
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION             1,2,1,0
-PRODUCTVERSION        	1,2,1,0
+FILEVERSION             1,3,0,0
+PRODUCTVERSION        	1,3,0,0
 FILEFLAGSMASK           VS_FFI_FILEFLAGSMASK
 FILEFLAGS               0x0L
 FILEOS                  VOS__WINDOWS32
@@ -16,11 +16,11 @@ BEGIN
         BEGIN
         VALUE "Comments",         "Fills the borders of a clip"
         VALUE "FileDescription",  "FillBorders for AviSynth 2.6 / AviSynth+"
-        VALUE "FileVersion",      "1.2.1"
+        VALUE "FileVersion",      "1.3.0"
         VALUE "InternalName",     "FillBorders"
         VALUE "OriginalFilename", "FillBorders.dll"
         VALUE "ProductName",      "FillBorders"
-        VALUE "ProductVersion",   "1.2.1"
+        VALUE "ProductVersion",   "1.3.0"
         END
     END
     BLOCK "VarFileInfo"

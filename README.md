@@ -38,6 +38,8 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
         Fills the borders by wrapping.\
     5: "fade"\
         Fill the borders to constant value.\
+    6: "fixborders"\
+        A direction "aware" modification of FillMargins. It also works on all four sides.\
     Default: 0.
 
 - y, u, v\

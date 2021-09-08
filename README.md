@@ -1,10 +1,16 @@
-# Description
+## Description
 
 This is a simple filter that fills the borders of a clip, without changing the clip's dimensions.
 
 This is [a port of the VapourSynth plugin FillBorders](https://github.com/dubhater/vapoursynth-fillborders).
 
-# Usage
+### Requirements:
+
+- AviSynth 2.60 / AviSynth+ 3.4 or later
+
+- Microsoft VisualC++ Redistributable Package 2022 (can be downloaded from [here](https://github.com/abbodi1406/vcredist/releases))
+
+### Usage:
 
 ```
 FillBorders (clip, int "left", int "top", int "right", int "bottom", int "mode", int "y", int "u", int "v")
@@ -16,7 +22,7 @@ The additional function FillMargins is alias for FillBordes(mode=0).
 FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", int "u", int "v")
 ```
 
-## Parameters:
+### Parameters:
 
 - clip\
     A clip to process. All planar formats are supported.
@@ -49,27 +55,25 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
     3: Process plane. Always process planes when the clip is RGB.\
     Default: y = u = v = 3.
 
-# Building
+### Building:
 
-## Windows
+- Windows\
+    Use solution files.
 
-Use solution files.
-
-## Linux
-
-### Requirements
-
-- Git
-- C++17 compiler
-- CMake >= 3.16
-
-```
-git clone https://github.com/Asd-g/AviSynth-FillBorders && \
-cd AviSynth-FillBorders && \
-mkdir build && \
-cd build && \
-
-cmake ..
-make -j$(nproc)
-sudo make install
-```
+- Linux
+    ```
+    Requirements:
+        - Git
+        - C++17 compiler
+        - CMake >= 3.16
+    ```
+    ```
+    git clone https://github.com/Asd-g/AviSynth-FillBorders && \
+    cd AviSynth-FillBorders && \
+    mkdir build && \
+    cd build && \
+    
+    cmake ..
+    make -j$(nproc)
+    sudo make install
+    ```

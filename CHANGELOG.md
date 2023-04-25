@@ -1,5 +1,10 @@
+##### 1.4.0:
+    Dropped support for AviSynt 2.6.
+    Changed type of parameters `left`, `top`, `right`, `bottom` to arrays. (FillBorders only)
+    Added support for alpha plane.
+
 ##### 1.3.0:
-    Added mode 6 (fixborders) (from vs FillBorders). 
+    Added mode 6 (fixborders) (from vs FillBorders).
 
 ##### 1.2.1:
     Not allowed clips with _FieldBased > 0.

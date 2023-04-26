@@ -1,3 +1,6 @@
+##### 1.4.1:
+    Fixed set of memory for high bit depth video.
+
 ##### 1.4.0:
     Dropped support for AviSynt 2.6.
     Changed type of parameters `left`, `top`, `right`, `bottom` to arrays. (FillBorders only)

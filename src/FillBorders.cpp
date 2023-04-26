@@ -8,8 +8,8 @@
 template <typename T>
 AVS_FORCEINLINE void memset16(T* ptr, T value, size_t num)
 {
-    while (--num > 0)
-        *++ptr = value;
+    while (num-- > 0)
+        *ptr++ = value;
 }
 
 template<typename T, typename T1>

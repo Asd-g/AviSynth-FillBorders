@@ -30,7 +30,13 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
 - left, top, right, bottom\
     Number of pixels to fill on each side. These can be any non-negative numbers, within reason.\
     If they are all 0, the input clip is simply passed through.\
-    If a single value for `left`/`top`/`right`/`bottom` is specified, it will be used for alpha plane and it will be right shifted by subsampling factor for chroma planes. If two values are given then the second value will be used for the third plane and the first value will be used for alpha plane. If three values are given then the first value will be used for alpha plane.\
+    For FillBorders:
+
+        - These must be used as named parameters. For example, `FillBorders(left=1, top=1, right=1, bottom=1)`.
+        - If a single value for `left`/`top`/`right`/`bottom` is specified, it will be used for alpha plane and it will be right shifted by subsampling factor for chroma planes.
+        - If two values are given then the second value will be used for the third plane and the first value will be used for alpha plane.
+        - If three values are given then the first value will be used for alpha plane.
+
     Default: left = 0, top = 0, right = 0, bottom = 0.
 
 - mode (FillBorders only)\

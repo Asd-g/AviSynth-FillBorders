@@ -258,12 +258,61 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
 								else
 									memcpy(srcp + static_cast<int64_t>(m_left[i] - trsize), temp_buf, static_cast<int64_t>(trsize * 2) * sizeof(T));
 
-								//						for (int x{ 0 }; x < m_left[i]; ++x)
-								//							dstp[stride * y + x] = dstp[stride * y + width - m_right[i] - m_left[i] + x];
+							}
+
+						}
+
+						if (m_right[i] > 0)
+						{
+							for (int y{ m_top[i] }; y < height - m_bottom[i]; ++y)
+							{
+								T* srcp;
+								T sample_last;
+								bool brightspecial = false;
+								if ((m_right[i] - (trsize + TS_KERNELSIZE / 2)) > 0)
+									srcp = dstp + static_cast<int64_t>(stride)* y + static_cast<int64_t>(width - m_right[i] - trsize);
+								else
+								{
+									srcp = dstp + static_cast<int64_t>(stride)* y + static_cast<int64_t>(width - m_right[i] - trsize);
+									sample_last = *(dstp + static_cast<int64_t>(stride)* y + static_cast<int64_t>(width));
+									brightspecial = true;
+								}
+
+								for (int xp{ 0 }; xp < trsize * 2; ++xp)
+								{
+									float sum = 0.0f;
+									for (int k{ 0 }; k < TS_KERNELSIZE; ++k)
+									{
+										if (!brightspecial)
+											sum += (float)srcp[xp + k - TS_KERNELSIZE / 2] * ts_kernel[k];
+										else
+										{
+											T sample;
+											if (xp + k + (width - m_right[i]) - trsize - (TS_KERNELSIZE / 2) > width)
+												sample = sample_last;
+											else
+												sample = srcp[xp + k + m_right[i] - trsize - TS_KERNELSIZE / 2];
+
+											sum += (float)sample * ts_kernel[k];
+										}
+									}
+									if (sizeof(T) < 4)
+										temp_buf[xp] = T(sum + 0.5f);
+									else
+										temp_buf[xp] = sum;
+								}
+
+								//copy back processed buf
+								if (!brightspecial)
+									memcpy(srcp, temp_buf, static_cast<int64_t>(trsize * 2) * sizeof(T));
+								else
+									memcpy(srcp + static_cast<int64_t>(m_left[i] - trsize), temp_buf, static_cast<int64_t>(trsize * 2) * sizeof(T));
 
 							}
 
 						}
+
+
 
 					}
 
@@ -554,6 +603,8 @@ FillBorders::FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue rig
 		if (ts > m_left[i]) env->ThrowError("FillBorders: ts must be lower or equal to fill size");
 	}
 
+	if ((ts* 2) > MAX_TSIZE) env->ThrowError("FillBorders: ts must be less %d", MAX_TSIZE/2);
+
 	trsize = ts;
 
     switch (num_left)
@@ -705,15 +756,9 @@ FillBorders::FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue rig
 
     switch (vi.ComponentSize())
     {
-        case 1: 
-			processing = &FillBorders::fill<uint8_t, int>; 
-			break;
-        case 2: 
-			processing = &FillBorders::fill<uint16_t, int>;
-			break;
-        default: 
-			processing = &FillBorders::fill<float, float>; 
-			break;
+        case 1: processing = &FillBorders::fill<uint8_t, int>; break;
+        case 2: processing = &FillBorders::fill<uint16_t, int>;	break;
+        default: processing = &FillBorders::fill<float, float>; break;
     }
 
 	if (trsize != 0)

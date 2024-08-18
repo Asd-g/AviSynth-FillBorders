@@ -70,23 +70,16 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
 
 ### Building:
 
-- Windows<br>
-    Use solution files.
-
-- Linux
-    ```
-    Requirements:
-        - Git
-        - C++17 compiler
-        - CMake >= 3.16
-    ```
-    ```
-    git clone https://github.com/Asd-g/AviSynth-FillBorders && <br>
-    cd AviSynth-FillBorders && <br>
-    mkdir build && <br>
-    cd build && <br>
-
-    cmake ..
-    make -j$(nproc)
-    sudo make install
-    ```
+```
+Requirements:
+    - Git
+    - C++17 compiler
+    - CMake >= 3.25
+    - Ninja
+```
+```
+git clone https://github.com/Asd-g/AviSynth-FillBorders
+cd AviSynth-FillBorders
+cmake -B build -G Ninja
+ninja -C build
+```

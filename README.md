@@ -13,7 +13,7 @@ This is [a port of the VapourSynth plugin FillBorders](https://github.com/dubhat
 ### Usage:
 
 ```
-FillBorders (clip, int[] "left", int[] "top", int[] "right", int[] "bottom", int "mode", int "y", int "u", int "v", int "a")
+FillBorders (clip, int[] "left", int[] "top", int[] "right", int[] "bottom", int "mode", int "y", int "u", int "v", int "a", bool "interlaced")
 ```
 
 The additional function FillMargins is alias for FillBordes(mode=0).
@@ -24,12 +24,12 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
 
 ### Parameters:
 
-- clip\
+- clip<br>
     A clip to process. All planar formats are supported.
 
-- left, top, right, bottom\
-    Number of pixels to fill on each side. These can be any non-negative numbers, within reason.\
-    If they are all 0, the input clip is simply passed through.\
+- left, top, right, bottom<br>
+    Number of pixels to fill on each side. These can be any non-negative numbers, within reason.<br>
+    If they are all 0, the input clip is simply passed through.<br>
     For FillBorders:
 
         - These must be used as named parameters. For example, `FillBorders(left=1, top=1, right=1, bottom=1)`.
@@ -39,33 +39,38 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
 
     Default: left = 0, top = 0, right = 0, bottom = 0.
 
-- mode (FillBorders only)\
-    0: "fillmargins"\
-        Fills the borders exactly like the Avisynth filter FillMargins, version 1.0.2.0. This mode is similar to "repeat", except that each pixel at the top and bottom borders is filled with a weighted average of its three neighbours from the previous line.\
-    1: "repeat"\
-        Fills the borders using the outermost line or column.\
-    2: "mirror"\
-        Fills the borders by mirroring (half sample symmetric).\
-    3: "reflect"\
-        Fills the borders by reflecting (whole sample symmetric).\
-    4: "wrap"\
-        Fills the borders by wrapping.\
-    5: "fade"\
-        Fill the borders to constant value.\
-    6: "fixborders"\
-        A direction "aware" modification of FillMargins. It also works on all four sides.\
+- mode (FillBorders only)<br>
+    0: "fillmargins"<br>
+        Fills the borders exactly like the Avisynth filter FillMargins, version 1.0.2.0. This mode is similar to "repeat", except that each pixel at the top and bottom borders is filled with a weighted average of its three neighbours from the previous line.<br>
+    1: "repeat"<br>
+        Fills the borders using the outermost line or column.<br>
+    2: "mirror"<br>
+        Fills the borders by mirroring (half sample symmetric).<br>
+    3: "reflect"<br>
+        Fills the borders by reflecting (whole sample symmetric).<br>
+    4: "wrap"<br>
+        Fills the borders by wrapping.<br>
+    5: "fade"<br>
+        Fill the borders to constant value.<br>
+    6: "fixborders"<br>
+        A direction "aware" modification of FillMargins. It also works on all four sides.<br>
     Default: 0.
 
-- y, u, v, a\
-    Planes to process.\
-    1: Return garbage.\
-    2: Copy plane.\
-    3: Process plane. Always process planes when the clip is RGB.\
+- y, u, v, a<br>
+    Planes to process.<br>
+    1: Return garbage.<br>
+    2: Copy plane.<br>
+    3: Process plane. Always process planes when the clip is RGB.<br>
     Default: y = 3, u = 3, v = 3, a = 3.
+
+- interlaced<br>
+    Whether the clip is interlaced.<br>
+    It's used `SeparateFields` and `Weave` to perform the filtering.<br>
+    Default: False.
 
 ### Building:
 
-- Windows\
+- Windows<br>
     Use solution files.
 
 - Linux
@@ -76,10 +81,10 @@ FillMargins (clip, int "left", int "top", int "right", int "bottom", int "y", in
         - CMake >= 3.16
     ```
     ```
-    git clone https://github.com/Asd-g/AviSynth-FillBorders && \
-    cd AviSynth-FillBorders && \
-    mkdir build && \
-    cd build && \
+    git clone https://github.com/Asd-g/AviSynth-FillBorders && <br>
+    cd AviSynth-FillBorders && <br>
+    mkdir build && <br>
+    cd build && <br>
 
     cmake ..
     make -j$(nproc)

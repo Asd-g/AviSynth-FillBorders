@@ -35,6 +35,7 @@ class FillBorders : public GenericVideoFilter
     int m_mode;
     std::array<int, 4> process;
     bool has_at_least_v8;
+    bool m_interlaced;
 
     template<typename T, typename T1>
     PVideoFrame fill(PVideoFrame frame, IScriptEnvironment* env);
@@ -42,7 +43,8 @@ class FillBorders : public GenericVideoFilter
     PVideoFrame(FillBorders::* processing)(PVideoFrame frame, IScriptEnvironment* env);
 
 public:
-    FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue right, AVSValue bottom, int mode, int y, int u, int v, int a, IScriptEnvironment* env);
+    FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue right, AVSValue bottom, int mode,
+        int y, int u, int v, int a, bool interlaced, IScriptEnvironment* env);
     PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
     int __stdcall SetCacheHints(int cachehints, int frame_range)
     {
@@ -469,8 +471,9 @@ PVideoFrame FillBorders::fill(PVideoFrame frame, IScriptEnvironment* env)
     return frame;
 }
 
-FillBorders::FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue right, AVSValue bottom, int mode, int y, int u, int v, int a, IScriptEnvironment* env)
-    : GenericVideoFilter(_child), m_mode(mode), process{ 1, 1, 1, 1 }
+FillBorders::FillBorders(PClip _child, AVSValue left, AVSValue top, AVSValue right, AVSValue bottom, int mode,
+    int y, int u, int v, int a, bool interlaced, IScriptEnvironment* env)
+    : GenericVideoFilter(_child), m_mode(mode), m_interlaced(interlaced), process{ 1, 1, 1, 1 }
 {
     if (!vi.IsPlanar())
         env->ThrowError("FillBorders: only planar formats are supported.");
@@ -644,11 +647,14 @@ PVideoFrame __stdcall FillBorders::GetFrame(int n, IScriptEnvironment* env)
 {
     PVideoFrame frame{ child->GetFrame(n, env) };
 
-    if (has_at_least_v8)
+    if (!m_interlaced)
     {
-        const AVSMap* props{ env->getFramePropsRO(frame) };
-        if (env->propNumElements(props, "_FieldBased") > 0 && env->propGetInt(props, "_FieldBased", 0, nullptr) > 0)
-            env->ThrowError("FillBorders: frame must be not interlaced.");
+        if (has_at_least_v8)
+        {
+            const AVSMap* props{ env->getFramePropsRO(frame) };
+            if (env->propNumElements(props, "_FieldBased") > 0 && env->propGetInt(props, "_FieldBased", 0, nullptr) > 0)
+                env->ThrowError("FillBorders: frame must be not interlaced or use interlaced=true.");
+        }
     }
 
     return (this->*processing)(frame, env);
@@ -656,20 +662,40 @@ PVideoFrame __stdcall FillBorders::GetFrame(int n, IScriptEnvironment* env)
 
 AVSValue __cdecl Create_FillBorders(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
-    enum { Clip, Left, Top, Right, Bottom, Mode, Y, U, V, A };
+    enum { Clip, Left, Top, Right, Bottom, Mode, Y, U, V, A, Interlaced };
 
-    return new FillBorders(
-        args[Clip].AsClip(),
-        args[Left],
-        args[Top],
-        args[Right],
-        args[Bottom],
-        args[Mode].AsInt(0),
-        args[Y].AsInt(3),
-        args[U].AsInt(3),
-        args[V].AsInt(3),
-        args[A].AsInt(3),
-        env);
+    const bool interlaced{ args[Interlaced].AsBool(false) };
+    if (interlaced)
+    {
+        PClip filtered{ new FillBorders(
+            env->Invoke("SeparateFields", args[Clip]).AsClip(),
+            args[Left],
+            args[Top],
+            args[Right],
+            args[Bottom],
+            args[Mode].AsInt(0),
+            args[Y].AsInt(3),
+            args[U].AsInt(3),
+            args[V].AsInt(3),
+            args[A].AsInt(3),
+            interlaced,
+            env) };
+        return env->Invoke("Weave", filtered).AsClip();
+    }
+    else
+        return new FillBorders(
+            args[Clip].AsClip(),
+            args[Left],
+            args[Top],
+            args[Right],
+            args[Bottom],
+            args[Mode].AsInt(0),
+            args[Y].AsInt(3),
+            args[U].AsInt(3),
+            args[V].AsInt(3),
+            args[A].AsInt(3),
+            interlaced,
+            env);
 }
 
 class Arguments
@@ -729,7 +755,29 @@ const char* __stdcall AvisynthPluginInit3(IScriptEnvironment * env, const AVS_Li
 {
     AVS_linkage = vectors;
 
-    env->AddFunction("FillBorders", "c[left]i*[top]i*[right]i*[bottom]i*[mode]i[y]i[u]i[v]i[a]i", Create_FillBorders, 0);
-    env->AddFunction("FillMargins", "c[left]i[top]i[right]i[bottom]i[y]i[u]i[v]i", Create_FillMargins, 0);
+    env->AddFunction("FillBorders",
+        "c"
+        "[left]i*"
+        "[top]i*"
+        "[right]i*"
+        "[bottom]i*"
+        "[mode]i"
+        "[y]i"
+        "[u]i"
+        "[v]i"
+        "[a]i"
+        "[interlaced]b",
+        Create_FillBorders, 0);
+
+    env->AddFunction("FillMargins",
+        "c"
+        "[left]i"
+        "[top]i"
+        "[right]i"
+        "[bottom]i"
+        "[y]i"
+        "[u]i"
+        "[v]i",
+        Create_FillMargins, 0);
     return "FillBorders";
 }

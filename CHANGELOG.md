@@ -1,3 +1,6 @@
+##### 1.4.2:
+    Added parameter `interlaced`.
+
 ##### 1.4.1:
     Fixed set of memory for high bit depth video.
 

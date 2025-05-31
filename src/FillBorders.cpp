@@ -492,9 +492,9 @@ void FillBorders<T_Pixel, T_Calc, MODE_VAL_ignored>::handle_mode_0_fillmargins_i
             const T_Calc n{static_cast<T_Calc>(prev_row[x + 1])};
 
             if constexpr (std::is_integral_v<T_Pixel>)
-                curr_row[x] = static_cast<T_Pixel>(std::round((3.0 * p + 2.0 * c + 3.0 * n) / 8.0));
+                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / 8);
             else
-                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / static_cast<T_Calc>(8.0));
+                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / 8.0f);
         }
     }
 
@@ -528,9 +528,9 @@ void FillBorders<T_Pixel, T_Calc, MODE_VAL_ignored>::handle_mode_0_fillmargins_i
             const T_Calc n{static_cast<T_Calc>(prev_row[x + 1])};
 
             if constexpr (std::is_integral_v<T_Pixel>)
-                curr_row[x] = static_cast<T_Pixel>(std::round((3.0 * p + 2.0 * c + 3.0 * n) / 8.0));
+                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / 8);
             else
-                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / static_cast<T_Calc>(8.0));
+                curr_row[x] = static_cast<T_Pixel>((3 * p + 2 * c + 3 * n) / 8.0f);
         }
     }
 }
@@ -1010,9 +1010,9 @@ void FillBorders<T_Pixel, T_Calc, MODE_VAL_ignored>::smooth_gaussian_horizontal_
         }
 
         if constexpr (std::is_integral_v<T_Pixel>)
-            temp_buf[xp] = static_cast<T_Pixel>(std::round(static_cast<double>(sum)));
-        else
             temp_buf[xp] = static_cast<T_Pixel>(sum);
+        else
+            temp_buf[xp] = sum;
     }
 
     int write_start_x_in_row_final;
@@ -1092,9 +1092,9 @@ void FillBorders<T_Pixel, T_Calc, MODE_VAL_ignored>::smooth_gaussian_vertical_im
         }
 
         if constexpr (std::is_integral_v<T_Pixel>)
-            temp_buf[yp] = static_cast<T_Pixel>(std::round(static_cast<double>(sum)));
-        else
             temp_buf[yp] = static_cast<T_Pixel>(sum);
+        else
+            temp_buf[yp] = sum;
     }
 
     int write_start_y_in_col_final;

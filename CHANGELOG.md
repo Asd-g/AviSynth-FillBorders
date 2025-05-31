@@ -1,3 +1,9 @@
+##### 1.5.0:
+    Improved lerp precision (`mode=5`).
+    Fixed out of bound access (`mode=6`).
+    Added parameters `ts`, `ts_mode`, `fade_value`.
+    Fixed `y/u/v/a=1`.
+
 ##### 1.4.2:
     Added parameter `interlaced`.
 
